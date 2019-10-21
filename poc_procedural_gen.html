@@ -13,18 +13,11 @@
 	.selected {
 		background-color: black;
 		border-color: white;
+		color: white;
 	}
 
 	.start {
 		background-color: green;
-	}
-
-	.end {
-		background-color: red;
-	}
-
-	.neighbor {
-		background-color: blue;
 	}
 </style>
 </head>
@@ -34,7 +27,6 @@
 		<input type='text' id='sizeX' />
 		Size Y
 		<input type='text' id='sizeY' />
-		<!-- <button onclick="buildRooms()">Build Rooms</button> -->
 		<button onclick="generatePath()">Generate Path!</button>
 	</span>
 	<div id="rooms" />
@@ -58,6 +50,7 @@
 		room.id = 'room' + x + '_' + y;
 		room.x = x;
 		room.y = y;
+		room.textContent = x + '_' + y;
 		room.isChosen = false;
 		parent.appendChild(room);
 	}
@@ -68,10 +61,10 @@
 			let child = rooms.firstChild;
 			rooms.removeChild(child);
 		}
-		let size = getInputs();
-		for(let x = 0; x < size.x; x++) {
+		let scopeSize = getInputs();
+		for(let x = 0; x < scopeSize.x; x++) {
 			let parentDiv = buildContainer();
-			for(let y = 0; y < size.y; y++)
+			for(let y = 0; y < scopeSize.y; y++)
 				buildRoom(parentDiv, x, y);
 			rooms.appendChild(parentDiv);
 		}
@@ -87,21 +80,20 @@
 		mapDirection = getRandomBoolean();
 	}
 
+	function setSize() {
+		size = getInputs();
+		size.x -= 1;
+		size.y -= 1;
+	}
+
+	function getSizeRandom() {
+		return Math.floor(Math.random() * (mapDirection ? size.x : size.y));
+	}
+
 	function getRandomBoolean() {
 		return Math.random() > 0.5;
 	}
 
-	function setSize() {
-		size = getInputs();
-	}
-
-	function getSizeRandom() {
-		return Math.round(Math.random() * mapDirection ? size.x-1 : size.y-1);
-	}
-
-	// when something simple turns into something complicated quickly.
-	// ok, so, we can only randomize one direction, the other must always go in increments.
-	// i.e. we start with direction x, left to right, we can't go backwards in left to right, but we can go both up AND down.
 	function buildSelector(x, y) {
 		return `#room${x}_${y}`;
 	}
@@ -112,122 +104,72 @@
 		let selector = buildSelector(...params);
 		element = document.querySelector(selector);
 		element.isChosen = true;
-		element.classList.add('selected', 'start');
+		element.classList.add('start');
 		return element;
 	}
 
-	// function shuffle(current) {
-	// 	let direction = getRandomBoolean() ? 'x' : 'y';
-	// 	let nonDirection = direction === 'x' ? 'y' : 'x';
-	// 	let random = getRandomBoolean() ? -1 : 1;
-	// 	let params = direction === 'x' ? [current[direction]+(2*random), current[nonDirection]] : [current[nonDirection], current[direction]+(2*random)];
-	// 	let blockerSelector = buildSelector(...params);
-	// 	let blocker = document.querySelector(blockerSelector);
-	// 	let isEdge = false;
-	// 	if(blocker == null) {
-	// 		params = direction === 'x' ? [current[direction]+random, current[nonDirection]] : [current[nonDirection], current[direction]+random];
-	// 		blockerSelector = buildSelector(...params);
-	// 		blocker = document.querySelector(blockerSelector);
-	// 	}
-	// 	if(blocker == null)
-	// 		isEdge = true;
-	// 	let primary = current[direction];
-	// 	if(!isEdge && !blocker.isChosen) {
-	// 		if(random > 0 && !(primary >= size[direction]-1))
-	// 			primary = current[direction] + random;
-	// 		if(random < 0 && !(primary <= 0))
-	// 			primary = current[direction] + random;
-	// 	}
-	// 	let secondary = current[nonDirection];
-	// 	params = direction === 'x' ? [primary,secondary] : [secondary,primary];
-	// 	let selector = buildSelector(...params);
-	// 	return document.querySelector(selector);
-	// }
+	function shuffle(array) {
+		var currentIndex = array.length, temporaryValue, randomIndex;
 
-	function pickNeighbor(current) {
-		let neighbor = shuffle(current);
-		let attempts = 0;
-		while(neighbor.isChosen && attempts < 4) {
-			neighbor = shuffle(current);
-			attempts++;
+		// While there remain elements to shuffle...
+		while (0 !== currentIndex) {
+			// Pick a remaining element...
+			randomIndex = Math.floor(Math.random() * currentIndex);
+			currentIndex -= 1;
+
+			// And swap it with the current element.
+			temporaryValue = array[currentIndex];
+			array[currentIndex] = array[randomIndex];
+			array[randomIndex] = temporaryValue;
 		}
-		neighbor.isChosen = true;
-		return neighbor;
-	}
 
-	function checkHasReachedMiddle(current) {
-		let direction = mapDirection ? 'x' : 'y';
-		let otherDirection = mapDirection ? 'y' : 'x';
-		return current[direction] >= Math.floor(size[direction]/2) && current[otherDirection] >= Math.floor(size[otherDirection]/2);
-	}
-
-	function checkHasReachedEnd(current) {
-		let direction = mapDirection ? 'x' : 'y';
-		return current[direction] >= size[direction] || current[direction] <= 0;
+		return array;
 	}
 
 	function generatePath() {
 		buildRooms();
-		setInitialDirection();
 		setSize();
+		setInitialDirection();
 		let current = pickStart();
-		scanNeighbors(current);
-		// let current = pickStart();
-		// let hasReachedEnd = false;
-		// let hasReachedMiddle = false;
-		// more tinkering, this is ugly.
-		// while(!hasReachedMiddle) {
-		// 	hasReachedMiddle = checkHasReachedMiddle(current);
-		// 	let neighbor = pickNeighbor(current);
-		// 	scanNeighbors(neighbor);
-		// 	if(neighbor.x === current.x && neighbor.y === current.y)
-		// 		hasReachedMiddle = true;
-		// 	neighbor.classList.add('selected');
-		// 	current = {...neighbor};
-		// }
-		// while(!hasReachedEnd) {
-		// 	hasReachedEnd = checkHasReachedEnd(current);
-		// 	let neighbor = pickNeighbor(current);
-		// 	scanNeighbors(neighbor);
-		// 	if(neighbor.x === current.x && neighbor.y === current.y) {
-		// 		hasReachedEnd = true;
-		// 		neighbor.classList.add('end');
-		// 	}
-		// 	neighbor.classList.add('selected');
-		// 	current = {...neighbor};
-		// }
-		// console.log('chosen direction: ' + (mapDirection ? 'x' : 'y'));
+		let selectedNeighbor;
+		do {
+			current = selectedNeighbor != null ? {...selectedNeighbor} : current;
+			neighbors = getFreeNeighbors(current);
+			selectedNeighbor = shuffle(neighbors).pop();
+			selectedNeighbor.isChosen = true;
+			selectedNeighbor.classList.add('selected');
+		} while(neighbors.length > 0);
 	}
 
-	// right now, we're assuming min and max are same to get squareish pathways
-	function getNeighbors(min, max, currentNode) {
-		let currentNodes = Array.prototype.slice.call(document.querySelector('#rooms').childNodes)
+	function getRooms() {
+		return Array.prototype.slice.call(document.querySelector('#rooms').childNodes)
 			.reduce((arr, node) => arr.concat(Array.prototype.slice.call(node.childNodes)), []);
-		let left = currentNodes.filter(left => left.x === currentNode.x - min);
-		let right = currentNodes.filter(right => right.x === currentNode.x + max);
-		let top = currentNodes.filter(top => top.y === currentNode.y - min);
-		let bottom = currentNodes.filter(bottom => bottom.y === currentNode.y + max);
-		let horizontal = left.concat(right);
-		let vertical = top.concat(bottom);
-		let neighbors = horizontal.concat(vertical);
-		neighbors = neighbors.filter((neighbor) => {
-			return neighbor.x > min-1;
-		}).filter((neighbor) => {
-			return neighbor.x < currentNode.x+1+max;
-		}).filter((neighbor) => {
-			return neighbor.y > min-1;
-		}).filter((neighbor) => {
-			return neighbor.y < currentNode.y+1+max;
-		});
-		return neighbors;
 	}
 
-	function scanNeighbors(currentNode) {
-		let neighbors = getNeighbors(2,2,currentNode);
-		let freeNeighbors = neighbors.filter(neighbor => !neighbor.isChosen);
-		freeNeighbors.forEach((neighbor) => {
-			neighbor.classList.add('neighbor');
-		});
+	function getDirectNeighbors(currentNode) {
+		let min = 1;
+		let max = 1;
+		return getRooms().filter(room => 
+				(currentNode.x-min === room.x && currentNode.y === room.y)
+			 || (currentNode.x+max === room.x && currentNode.y === room.y)
+			 || (currentNode.y-min === room.y && currentNode.x === room.x)
+			 || (currentNode.y+max === room.y && currentNode.x === room.x));
+	}
+
+	function getFreeNeighbors(currentNode) {
+		let range = 2;
+		let freeNeighbors = 
+			getDirectNeighbors(currentNode) // get direct neighbors, up, down, left, right
+			.filter(neighbor => !neighbor.isChosen) // make sure none of those are chosen neighbors
+			.filter((neighbor) => { // get neighbors of neighbors and make sure they have at least 2 choosable neighbors
+				return getDirectNeighbors(neighbor)
+					.filter(neighbor => neighbor.isChosen).length < range;
+			})
+			.filter((neighbor) => {
+				return getDirectNeighbors(neighbor)
+					.filter(neighbor => !neighbor.isChosen || neighbor.x === size.x || neighbor.y === size.y || neighbor.x === 0 || neighbor.y === 0).length > 1;
+			});
+		return freeNeighbors;
 	}
 </script>
 </html>

@@ -116,33 +116,33 @@
 		return element;
 	}
 
-	function shuffle(current) {
-		let direction = getRandomBoolean() ? 'x' : 'y';
-		let nonDirection = direction === 'x' ? 'y' : 'x';
-		let random = getRandomBoolean() ? -1 : 1;
-		let params = direction === 'x' ? [current[direction]+(2*random), current[nonDirection]] : [current[nonDirection], current[direction]+(2*random)];
-		let blockerSelector = buildSelector(...params);
-		let blocker = document.querySelector(blockerSelector);
-		let isEdge = false;
-		if(blocker == null) {
-			params = direction === 'x' ? [current[direction]+random, current[nonDirection]] : [current[nonDirection], current[direction]+random];
-			blockerSelector = buildSelector(...params);
-			blocker = document.querySelector(blockerSelector);
-		}
-		if(blocker == null)
-			isEdge = true;
-		let primary = current[direction];
-		if(!isEdge && !blocker.isChosen) {
-			if(random > 0 && !(primary >= size[direction]-1))
-				primary = current[direction] + random;
-			if(random < 0 && !(primary <= 0))
-				primary = current[direction] + random;
-		}
-		let secondary = current[nonDirection];
-		params = direction === 'x' ? [primary,secondary] : [secondary,primary];
-		let selector = buildSelector(...params);
-		return document.querySelector(selector);
-	}
+	// function shuffle(current) {
+	// 	let direction = getRandomBoolean() ? 'x' : 'y';
+	// 	let nonDirection = direction === 'x' ? 'y' : 'x';
+	// 	let random = getRandomBoolean() ? -1 : 1;
+	// 	let params = direction === 'x' ? [current[direction]+(2*random), current[nonDirection]] : [current[nonDirection], current[direction]+(2*random)];
+	// 	let blockerSelector = buildSelector(...params);
+	// 	let blocker = document.querySelector(blockerSelector);
+	// 	let isEdge = false;
+	// 	if(blocker == null) {
+	// 		params = direction === 'x' ? [current[direction]+random, current[nonDirection]] : [current[nonDirection], current[direction]+random];
+	// 		blockerSelector = buildSelector(...params);
+	// 		blocker = document.querySelector(blockerSelector);
+	// 	}
+	// 	if(blocker == null)
+	// 		isEdge = true;
+	// 	let primary = current[direction];
+	// 	if(!isEdge && !blocker.isChosen) {
+	// 		if(random > 0 && !(primary >= size[direction]-1))
+	// 			primary = current[direction] + random;
+	// 		if(random < 0 && !(primary <= 0))
+	// 			primary = current[direction] + random;
+	// 	}
+	// 	let secondary = current[nonDirection];
+	// 	params = direction === 'x' ? [primary,secondary] : [secondary,primary];
+	// 	let selector = buildSelector(...params);
+	// 	return document.querySelector(selector);
+	// }
 
 	function pickNeighbor(current) {
 		let neighbor = shuffle(current);

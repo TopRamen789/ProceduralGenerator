@@ -50,7 +50,7 @@
 		room.id = 'room' + x + '_' + y;
 		room.x = x;
 		room.y = y;
-		room.textContent = x + '_' + y;
+		// room.textContent = x + '_' + y;
 		room.isChosen = false;
 		parent.appendChild(room);
 	}
@@ -68,44 +68,6 @@
 				buildRoom(parentDiv, x, y);
 			rooms.appendChild(parentDiv);
 		}
-	}
-
-	/* 
-	our generation algorithm is going to make a path randomly from one side of the map to the other.
-	*/
-	var mapDirection = false;
-	var size = {x: 0, y: 0};
-
-	function setInitialDirection() {
-		mapDirection = getRandomBoolean();
-	}
-
-	function setSize() {
-		size = getInputs();
-		size.x -= 1;
-		size.y -= 1;
-	}
-
-	function getSizeRandom() {
-		return Math.floor(Math.random() * (mapDirection ? size.x : size.y));
-	}
-
-	function getRandomBoolean() {
-		return Math.random() > 0.5;
-	}
-
-	function buildSelector(x, y) {
-		return `#room${x}_${y}`;
-	}
-
-	function pickStart() {
-		let random = getSizeRandom();
-		let params = mapDirection ? [0,random] : [random,0];
-		let selector = buildSelector(...params);
-		element = document.querySelector(selector);
-		element.isChosen = true;
-		element.classList.add('start');
-		return element;
 	}
 
 	function shuffle(array) {
@@ -126,19 +88,75 @@
 		return array;
 	}
 
+	/* 
+	our generation algorithm is going to make a path randomly from one side of the map to the other.
+	*/
+	let mapDirection = false;
+	let _size = {x: 0, y: 0};
+
+	function setInitialDirection() {
+		mapDirection = getRandomBoolean();
+	}
+
+	function setSize() {
+		_size = getInputs();
+		_size.x -= 1;
+		_size.y -= 1;
+	}
+
+	function getSizeRandom() {
+		return Math.floor(Math.random() * (mapDirection ? _size.x : _size.y));
+	}
+
+	function getRandomBoolean() {
+		return Math.random() > 0.5;
+	}
+
+	function buildSelector(x, y) {
+		return `#room${x}_${y}`;
+	}
+
+	function pickStart() {
+		let random = getSizeRandom();
+		let params = mapDirection ? [0,random] : [random,0];
+		let selector = buildSelector(...params);
+		element = document.querySelector(selector);
+		// element.isChosen = true;
+		// element.classList.add('start');
+		return element;
+	}
+
 	function generatePath() {
 		buildRooms();
 		setSize();
 		setInitialDirection();
+		
 		let current = pickStart();
+		current.classList.add('start');
+		current.isChosen = true;
+		console.log(current);
+
+		let selectedNeighbors = [];
 		let selectedNeighbor;
-		do {
+
+		let maxSize = _size.x > _size.y ? _size.x : _size.y;
+		maxSize += _size.x < _size.y ? _size.x : _size.y;
+
+		while(selectedNeighbors.length < maxSize) {
 			current = selectedNeighbor != null ? {...selectedNeighbor} : current;
-			neighbors = getFreeNeighbors(current);
-			selectedNeighbor = shuffle(neighbors).pop();
-			selectedNeighbor.isChosen = true;
-			selectedNeighbor.classList.add('selected');
-		} while(neighbors.length > 0);
+			let neighbors = getFreeNeighbors(current);
+			if(neighbors != null && neighbors.length > 0) {
+				selectedNeighbor = shuffle(neighbors).pop();
+				selectedNeighbor.isChosen = true;
+				selectedNeighbors.push(selectedNeighbor);
+			} else {
+				break;
+			}
+		}
+		selectedNeighbors.forEach((neighbor, idx) => {
+			neighbor.classList.add('selected');
+			console.log(neighbor, idx);
+		});
 	}
 
 	function getRooms() {
@@ -157,19 +175,24 @@
 	}
 
 	function getFreeNeighbors(currentNode) {
-		let range = 2;
-		let freeNeighbors = 
-			getDirectNeighbors(currentNode) // get direct neighbors, up, down, left, right
-			.filter(neighbor => !neighbor.isChosen) // make sure none of those are chosen neighbors
-			.filter((neighbor) => { // get neighbors of neighbors and make sure they have at least 2 choosable neighbors
-				return getDirectNeighbors(neighbor)
-					.filter(neighbor => neighbor.isChosen).length < range;
-			})
-			.filter((neighbor) => {
-				return getDirectNeighbors(neighbor)
-					.filter(neighbor => !neighbor.isChosen || neighbor.x === size.x || neighbor.y === size.y || neighbor.x === 0 || neighbor.y === 0).length > 1;
-			});
-		return freeNeighbors;
+		// get direct neighbors, up, down, left, right and get ones that are not chosen.
+		let notChosenNeighbors = getDirectNeighbors(currentNode)
+			.filter(neighbor => !neighbor.isChosen);
+
+		// this should be on notChosenNeighbors.
+		let neighborsHaveChosenNeighbors = notChosenNeighbors
+			.reduce((acc, neighbor) => acc = acc.concat(getDirectNeighbors(neighbor)), [])
+			.filter(neighbor => !(neighbor.x === currentNode.x && neighbor.y === currentNode.y));
+			.some(neighbor => neighbor.isChosen);
+
+		console.log(neighborsHaveChosenNeighbors);
+
+		if(notChosenNeighbors.length === 0) {
+			currentNode.isChosen = true;
+			return;
+		}
+
+		return notChosenNeighbors;
 	}
 </script>
 </html>
